@@ -1,3 +1,36 @@
-const icons=[<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 3 8.6 7 10 4-1.4 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>,<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h12v10H3zM15 10h3l3 3v4h-6z"/><path d="M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>,<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2"/></svg>,<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14 9l6 2-6 2-2 6-2-6-6-2 6-2 2-6Z"/></svg>];
-const benefits=[['100% originales','Garantía de autenticidad en cada compra.'],['Envíos a todo el mundo','Entrega segura y rápida a donde estés.'],['Pagos seguros','Tus pagos están protegidos con cifrado avanzado.'],['Atención personalizada','Estamos aquí para ayudarte en lo que necesitas.']];
-export default function TrustBenefits(){return <div className="perks benefits-animated">{benefits.map(([title,copy],index)=><article className="perk" key={title}><span className="perk-icon">{icons[index]}</span><div><h4>{title}</h4><p>{copy}</p></div></article>)}</div>}
+import styles from './TrustBenefits.module.css';
+import motion from './TrustBenefitsMotion.module.css';
+
+const icons = [
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 3 8.6 7 10 4-1.4 7-5.3 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg>,
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h12v10H3zM15 10h3l3 3v4h-6z"/><path d="M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>,
+  <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2"/></svg>,
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 14 9l6 2-6 2-2 6-2-6-6-2 6-2 2-6Z"/></svg>,
+];
+
+const benefits = [
+  ['100% originales', 'Garantía de autenticidad en cada compra.'],
+  ['Envíos a todo el mundo', 'Entrega segura y rápida a donde estés.'],
+  ['Pagos seguros', 'Tus pagos están protegidos con cifrado avanzado.'],
+  ['Atención personalizada', 'Estamos aquí para ayudarte en lo que necesitas.'],
+];
+
+const englishBenefits = [
+  ['100% original', 'Guaranteed authenticity with every purchase.'],
+  ['Worldwide shipping', 'Safe and fast delivery wherever you are.'],
+  ['Secure payments', 'Your payment is protected with advanced encryption.'],
+  ['Personal service', 'We are here to help you find what you need.'],
+];
+
+export default function TrustBenefits({ locale = 'es' }: { locale?: 'es' | 'en' }) {
+  const content = locale === 'en' ? englishBenefits : benefits;
+  return <div className={styles.benefits}>
+    {content.map(([title, copy], index) => <article className={`${styles.benefit} ${motion.benefit}`} key={title}>
+      <span className={styles.icon}>{icons[index]}</span>
+      <div className={styles.content}>
+        <h4 className={styles.title}>{title}</h4>
+        <p className={styles.copy}>{copy}</p>
+      </div>
+    </article>)}
+  </div>;
+}

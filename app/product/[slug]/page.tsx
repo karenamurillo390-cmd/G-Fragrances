@@ -1,3 +1,38 @@
-'use client';
-import {useParams,useRouter} from 'next/navigation';import {formatCOP} from '@/lib/catalog';import {useProducts} from '@/components/ProductCatalog';import {useStore} from '@/components/Store';import {useState} from 'react';
-export default function ProductPage(){const {slug}=useParams<{slug:string}>();const {products,ready}=useProducts();const product=products.find(p=>p.slug===slug&&p.active);const {add}=useStore();const router=useRouter();const [quantity,setQuantity]=useState(1);if(!ready)return null;if(!product)return <main className="page catalog"><div className="empty">Este producto no está disponible.</div></main>;const addQuantity=()=>{for(let i=0;i<quantity;i++)add(product)};const whatsapp=`https://wa.me/?text=${encodeURIComponent(`Hola G Fragrances, quiero comprar ${quantity} x ${product.brand} ${product.name}. Total: ${formatCOP(product.price*quantity)}. ${location.href}`)}`;return <main className="page detail"><img className="detail-img" src={product.image} alt={`${product.brand} ${product.name}`}/><section><span className="eyebrow">{product.type} · {product.concentration}</span><h1>{product.brand}<br/><span className="gold">{product.name}</span></h1><div className="stars">★★★★★ <span style={{color:'#887b6b'}}>({product.stock+52} reseñas)</span></div><p className="price">{formatCOP(product.price)}</p><p style={{color:'#c4bdb2',lineHeight:1.7}}>{product.description}</p><p className="eyebrow" style={{marginTop:25}}>Notas olfativas</p><div className="notes">{product.notes.map(n=><span className="note" key={n}>{n}</span>)}</div><p style={{fontSize:'.76rem',color:'#c7bdad',marginTop:25}}>Tamaño: <b>{product.size}</b>　 ·　Stock disponible: <b className="gold">{product.stock}</b></p><div className="qty"><button onClick={()=>setQuantity(q=>Math.max(1,q-1))}>−</button><span>{quantity}</span><button onClick={()=>setQuantity(q=>Math.min(product.stock,q+1))}>＋</button></div><div style={{display:'flex',gap:11,flexWrap:'wrap'}}><button className="button dark" onClick={addQuantity}>Agregar al carrito</button><button className="button" onClick={()=>{addQuantity();router.push('/checkout')}}>Comprar ahora</button></div><a className="button" style={{marginTop:12}} target="_blank" href={whatsapp}>Comprar por WhatsApp　↗</a></section></main>}
+import type { Metadata } from 'next';
+import { products } from '@/lib/catalog';
+import { productSeo, productSchema } from '@/lib/seo';
+import SeoJsonLd from '@/components/SeoJsonLd';
+import SeoBreadcrumbs from '@/components/SeoBreadcrumbs';
+import ProductDetailClient from '@/components/ProductDetailClient';
+
+type Props = { params: Promise<{ slug: string }> };
+
+export function generateStaticParams() {
+  return products.map(({ slug }) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const product = products.find((item) => item.slug === slug);
+  if (!product) return { title: 'Producto no disponible', robots: { index: false, follow: false } };
+  const seo = productSeo(product);
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: [product.brand, product.name, `${product.type} perfumes`, 'perfume original', 'buy perfumes online', 'perfumes Colombia', 'perfumes USA'],
+    alternates: { canonical: seo.canonical },
+    openGraph: { type: 'website', url: seo.canonical, title: seo.title, description: seo.description, images: [{ url: product.image, alt: `${product.brand} ${product.name}` }] },
+    twitter: { card: 'summary_large_image', title: seo.title, description: seo.description, images: [product.image] },
+  };
+}
+
+export default async function ProductPage({ params }: Props) {
+  const { slug } = await params;
+  const product = products.find((item) => item.slug === slug);
+  if (!product) return <ProductDetailClient />;
+  return <>
+    <SeoJsonLd data={productSchema(product)} />
+    <SeoBreadcrumbs items={[{ name: 'Inicio', path: '/' }, { name: 'Perfumes', path: '/catalog/best-sellers' }, { name: `${product.brand} ${product.name}`, path: `/product/${product.slug}` }]} />
+    <ProductDetailClient />
+  </>;
+}

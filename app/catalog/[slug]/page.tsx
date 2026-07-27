@@ -1,3 +1,32 @@
-'use client';
-import {useParams,useSearchParams} from 'next/navigation';import {categories} from '@/lib/catalog';import ProductCard from '@/components/ProductCard';import {useProducts} from '@/components/ProductCatalog';import {useEffect,useMemo,useState} from 'react';
-export default function Catalog(){const {slug}=useParams<{slug:string}>();const {products}=useProducts();const searchParams=useSearchParams();const [query,setQuery]=useState(searchParams.get('q')??'');useEffect(()=>setQuery(searchParams.get('q')??''),[searchParams]);const title=slug==='search'?'Resultados de búsqueda':slug==='best-sellers'?'Best Sellers':slug==='designer'?'Designer':slug==='niche'?'Niche':slug==='discovery'?'Discovery Sets':categories.find(c=>c.slug===slug)?.name??'Colección';const items=useMemo(()=>products.filter(p=>{const group=slug==='best-sellers'?p.bestSeller:slug==='designer'?p.type==='Designer':slug==='niche'?p.type==='Niche':slug==='discovery'?p.type==='Discovery':slug==='search'?true:p.category===slug;const term=query.toLowerCase();return p.active&&group&&(!term||[p.name,p.brand,p.category,p.type,...p.notes].join(' ').toLowerCase().includes(term))}),[slug,query,products]);return <main className="page catalog"><div className="catalog-head"><span className="eyebrow">G Fragrances / catálogo</span><h1>{title}</h1>{slug==='search'&&query&&<p className="search-caption">Mostrando {items.length} resultado{items.length===1?'':'s'} para <span>“{query}”</span></p>}<input className="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar por nombre, marca o notas..."/></div>{items.length?<div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p}/>)}</div>:<div className="empty">No hay productos disponibles con esta búsqueda.</div>}</main>}
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { categories } from '@/lib/catalog';
+import CatalogClient from '@/components/CatalogClient';
+import SeoBreadcrumbs from '@/components/SeoBreadcrumbs';
+
+type Props = { params: Promise<{ slug: string }> };
+const seoPages: Record<string, { title: string; description: string }> = {
+  'best-sellers': { title: 'Best Sellers: perfumes originales más vendidos', description: 'Descubre los perfumes originales más vendidos: fragancias de diseñador, nicho y árabes para Colombia y Estados Unidos.' },
+  designer: { title: 'Designer Perfumes originales', description: 'Compra perfumes de diseñador originales online. Selección de fragancias icónicas con envío a Colombia y Estados Unidos.' },
+  niche: { title: 'Niche Perfumes: fragancias exclusivas', description: 'Explora perfumes nicho originales y fragancias exclusivas para quienes buscan una firma olfativa única.' },
+  arabian: { title: 'Arabic Perfumes originales', description: 'Perfumes árabes originales: oud, ámbar y fragancias intensas seleccionadas por G Fragrances.' },
+  discovery: { title: 'Fragrance Samples y Discovery Sets', description: 'Descubre samples y sets de perfumes para explorar nuevas fragancias antes de elegir tu favorita.' },
+};
+
+export function generateStaticParams() {
+  return [...categories.map(({ slug }) => ({ slug })), ...Object.keys(seoPages).map((slug) => ({ slug }))];
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  if (slug === 'search') return { title: 'Buscar perfumes', robots: { index: false, follow: true } };
+  const category = categories.find((item) => item.slug === slug);
+  const data = seoPages[slug] ?? (category ? { title: `${category.name} | Perfumes originales`, description: `Compra ${category.name.toLowerCase()} y perfumes originales seleccionados por G Fragrances.` } : { title: 'Colección de perfumes', description: 'Explora perfumes originales en G Fragrances.' });
+  return { title: data.title, description: data.description, alternates: { canonical: `/catalog/${slug}` }, openGraph: { title: data.title, description: data.description, url: `/catalog/${slug}` } };
+}
+
+export default async function CatalogPage({ params }: Props) {
+  const { slug } = await params;
+  const label = seoPages[slug]?.title ?? categories.find((item) => item.slug === slug)?.name ?? 'Catálogo';
+  return <><SeoBreadcrumbs items={[{ name: 'Inicio', path: '/' }, { name: label, path: `/catalog/${slug}` }]} /><Suspense fallback={null}><CatalogClient /></Suspense></>;
+}
